@@ -16,6 +16,7 @@ class JobOut(BaseModel):
     ai_summary: Optional[str] = None
     ai_match: Optional[str] = None
     ai_cover_letter: Optional[str] = None
+    ai_resume_tweak: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -33,6 +34,10 @@ class MatchRequest(BaseModel):
 
 class CoverLetterRequest(BaseModel):
     background: str = ""
+
+
+class TweakResumeRequest(BaseModel):
+    resume_text: str
 
 
 class EnhanceSearchRequest(BaseModel):

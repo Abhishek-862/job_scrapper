@@ -103,6 +103,47 @@ Instructions:
         return f"Error generating cover letter: {e}"
 
 
+def tweak_resume(description: str, title: str, resume_text: str) -> dict:
+    prompt = f"""You are an expert resume coach and ATS specialist. Rewrite and improve this resume to better match the job.
+
+Job Title: {title}
+Job Description:
+{description[:2000]}
+
+Candidate's Current Resume:
+{resume_text[:2000]}
+
+Return ONLY valid JSON with exactly these keys:
+{{
+  "ats_keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
+  "bullet_rewrites": [
+    {{"original": "exact bullet from their resume", "improved": "stronger rewritten version with metrics and action verbs"}},
+    {{"original": "another bullet", "improved": "improved version"}},
+    {{"original": "another bullet", "improved": "improved version"}}
+  ],
+  "skills_to_highlight": ["skill1", "skill2", "skill3"],
+  "suggested_summary": "A 2-sentence professional summary tailored to this specific job",
+  "tips": ["specific actionable tip 1", "specific actionable tip 2", "specific actionable tip 3"]
+}}
+
+Rules:
+- ATS keywords must come directly from the job description
+- Bullet rewrites must start with strong action verbs and include metrics where possible
+- Do not invent experience the candidate doesn't have — only reframe what's there"""
+
+    try:
+        resp = _client().chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"},
+            max_tokens=800,
+        )
+        return json.loads(resp.choices[0].message.content)
+    except Exception as e:
+        logger.error("tweak_resume failed: %s", e)
+        return {"error": str(e)}
+
+
 def enhance_search(query: str) -> list:
     prompt = f"""A job seeker wants to find roles similar to: "{query}"
 

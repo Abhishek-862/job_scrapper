@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 from ..auth import verify_token
 from ..database import get_db
 from ..models import Job
-from ..schemas import JobOut, MatchRequest, CoverLetterRequest
-from ..openai_service import analyze_job, match_resume, generate_cover_letter
+from ..schemas import JobOut, MatchRequest, CoverLetterRequest, TweakResumeRequest
+from ..openai_service import analyze_job, match_resume, generate_cover_letter, tweak_resume
 
 router = APIRouter()
 
@@ -65,6 +65,18 @@ def cover_letter(job_id: int, req: CoverLetterRequest, db: Session = Depends(get
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     job.ai_cover_letter = generate_cover_letter(job.description, job.title, job.company, req.background)
+    db.commit()
+    db.refresh(job)
+    return job
+
+
+@router.post("/jobs/{job_id}/tweak-resume", response_model=JobOut)
+def tweak(job_id: int, req: TweakResumeRequest, db: Session = Depends(get_db), token: str = Depends(verify_token)):
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    result = tweak_resume(job.description, job.title, req.resume_text)
+    job.ai_resume_tweak = json.dumps(result)
     db.commit()
     db.refresh(job)
     return job

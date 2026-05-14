@@ -18,4 +18,5 @@ class Job(Base):
     ai_summary = Column(Text, nullable=True)
     ai_match = Column(Text, nullable=True)
     ai_cover_letter = Column(Text, nullable=True)
+    ai_resume_tweak = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
