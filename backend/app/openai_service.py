@@ -1,13 +1,23 @@
 import json
+import re
 import logging
 from openai import OpenAI
 from .config import settings
 
 logger = logging.getLogger(__name__)
 
+_HF_MODEL = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+_HF_BASE_URL = "https://api-inference.huggingface.co/v1/"
+
 
 def _client() -> OpenAI:
-    return OpenAI(api_key=settings.openai_api_key)
+    return OpenAI(api_key=settings.hf_token, base_url=_HF_BASE_URL)
+
+
+def _parse_json(text: str) -> dict:
+    # Strip markdown code fences if the model wraps output in them
+    text = re.sub(r"```(?:json)?\s*", "", text).strip().rstrip("`").strip()
+    return json.loads(text)
 
 
 def analyze_job(description: str, title: str, company: str) -> dict:
@@ -30,12 +40,11 @@ JSON schema (use exactly these keys):
 
     try:
         resp = _client().chat.completions.create(
-            model="gpt-4o-mini",
+            model=_HF_MODEL,
             messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
             max_tokens=600,
         )
-        return json.loads(resp.choices[0].message.content)
+        return _parse_json(resp.choices[0].message.content)
     except Exception as e:
         logger.error("analyze_job failed: %s", e)
         return {"error": str(e)}
@@ -62,12 +71,11 @@ Return ONLY valid JSON:
 
     try:
         resp = _client().chat.completions.create(
-            model="gpt-4o-mini",
+            model=_HF_MODEL,
             messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
             max_tokens=600,
         )
-        return json.loads(resp.choices[0].message.content)
+        return _parse_json(resp.choices[0].message.content)
     except Exception as e:
         logger.error("match_resume failed: %s", e)
         return {"error": str(e)}
@@ -93,7 +101,7 @@ Instructions:
 
     try:
         resp = _client().chat.completions.create(
-            model="gpt-4o-mini",
+            model=_HF_MODEL,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=500,
         )
@@ -133,12 +141,11 @@ Rules:
 
     try:
         resp = _client().chat.completions.create(
-            model="gpt-4o-mini",
+            model=_HF_MODEL,
             messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
             max_tokens=800,
         )
-        return json.loads(resp.choices[0].message.content)
+        return _parse_json(resp.choices[0].message.content)
     except Exception as e:
         logger.error("tweak_resume failed: %s", e)
         return {"error": str(e)}
@@ -152,12 +159,11 @@ Return ONLY valid JSON: {{"suggestions": ["title1", "title2", "title3", "title4"
 
     try:
         resp = _client().chat.completions.create(
-            model="gpt-4o-mini",
+            model=_HF_MODEL,
             messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
             max_tokens=120,
         )
-        return json.loads(resp.choices[0].message.content).get("suggestions", [])
+        return _parse_json(resp.choices[0].message.content).get("suggestions", [])
     except Exception as e:
         logger.error("enhance_search failed: %s", e)
         return []

@@ -24,10 +24,14 @@ def scrape_jobs_task(self, query: str, location: str, results_wanted: int):
         jobs = scrape_linkedin_jobs(query, location, results_wanted)
         saved = 0
         for job_data in jobs:
-            exists = db.query(Job).filter(Job.job_url == job_data["job_url"]).first()
-            if not exists and job_data["job_url"]:
-                db.add(Job(query=query, **job_data))
-                saved += 1
+            url = job_data.get("job_url", "")
+            # skip duplicate URLs, but allow jobs with no URL (Indeed sometimes omits them)
+            if url:
+                exists = db.query(Job).filter(Job.job_url == url).first()
+                if exists:
+                    continue
+            db.add(Job(query=query, **job_data))
+            saved += 1
         db.commit()
         logger.info("Scraped %d, saved %d for query '%s'", len(jobs), saved, query)
         return {"status": "done", "scraped": len(jobs), "saved": saved}

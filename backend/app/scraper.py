@@ -3,45 +3,63 @@ from typing import List, Dict
 
 logger = logging.getLogger(__name__)
 
+# Scrape LinkedIn first, fall back to Indeed if LinkedIn returns nothing.
+# Indeed is more scraping-friendly; LinkedIn blocks aggressively on shared IPs.
+SOURCES = ["linkedin", "indeed"]
+
 
 def scrape_linkedin_jobs(query: str, location: str = "Remote", results_wanted: int = 15) -> List[Dict]:
-    try:
-        from jobspy import scrape_jobs
+    from jobspy import scrape_jobs
 
-        jobs_df = scrape_jobs(
-            site_name=["linkedin"],
-            search_term=query,
-            location=location,
-            results_wanted=results_wanted,
-            hours_old=72,
-        )
+    for site in SOURCES:
+        try:
+            logger.info("Trying %s for query='%s' location='%s'", site, query, location)
+            jobs_df = scrape_jobs(
+                site_name=[site],
+                search_term=query,
+                location=location,
+                results_wanted=results_wanted,
+                country_indeed="USA",
+            )
 
-        if jobs_df is None or jobs_df.empty:
-            logger.warning("No jobs returned for query: %s", query)
-            return []
-
-        jobs = []
-        for _, row in jobs_df.iterrows():
-            title = str(row.get("title", "")).strip()
-            company = str(row.get("company", "")).strip()
-            if not title or not company or title == "nan" or company == "nan":
+            if jobs_df is None or jobs_df.empty:
+                logger.warning("%s returned 0 results — trying next source", site)
                 continue
 
-            jobs.append({
-                "title": title,
-                "company": company,
-                "location": _clean(row.get("location")),
-                "description": _clean(row.get("description")) or "No description provided.",
-                "salary": _extract_salary(row),
-                "job_url": _clean(row.get("job_url")) or "",
-                "posted_at": _clean(row.get("date_posted")),
-            })
+            jobs = _parse(jobs_df)
+            if not jobs:
+                logger.warning("%s had rows but all were filtered out — trying next source", site)
+                continue
 
-        return jobs
+            logger.info("%s returned %d usable jobs", site, len(jobs))
+            return jobs
 
-    except Exception as e:
-        logger.error("Scraping failed: %s", e, exc_info=True)
-        return []
+        except Exception as e:
+            logger.error("%s scraping failed: %s", site, e, exc_info=True)
+            continue
+
+    logger.error("All sources exhausted — returning empty list")
+    return []
+
+
+def _parse(jobs_df) -> List[Dict]:
+    jobs = []
+    for _, row in jobs_df.iterrows():
+        title = _clean(row.get("title"))
+        company = _clean(row.get("company"))
+        if not title or not company:
+            continue
+
+        jobs.append({
+            "title": title,
+            "company": company,
+            "location": _clean(row.get("location")),
+            "description": _clean(row.get("description")) or "No description provided.",
+            "salary": _extract_salary(row),
+            "job_url": _clean(row.get("job_url")) or "",
+            "posted_at": _clean(row.get("date_posted")),
+        })
+    return jobs
 
 
 def _clean(val) -> str:

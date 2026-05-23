@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     model_config = ConfigDict(env_file=".env", extra="ignore")
 
     api_token: str = "dev-token"
-    openai_api_key: str = ""
+    hf_token: str = ""
     database_url: str = "postgresql://user:pass@db:5432/jobs"
     redis_url: str = "redis://redis:6379/0"
 
