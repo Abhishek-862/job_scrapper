@@ -6,7 +6,7 @@ from .config import settings
 
 logger = logging.getLogger(__name__)
 
-_HF_MODEL = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+_HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"
 _HF_BASE_URL = "https://api-inference.huggingface.co/v1/"
 
 
