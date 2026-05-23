@@ -7,6 +7,7 @@ class Settings(BaseSettings):
 
     api_token: str = "dev-token"
     hf_token: str = ""
+    groq_api_key: str = ""
     database_url: str = "postgresql://user:pass@db:5432/jobs"
     redis_url: str = "redis://redis:6379/0"
 

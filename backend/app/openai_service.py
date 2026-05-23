@@ -6,12 +6,12 @@ from .config import settings
 
 logger = logging.getLogger(__name__)
 
-_HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"
-_HF_BASE_URL = "https://api-inference.huggingface.co/v1/"
+_GROQ_MODEL = "llama-3.1-8b-instant"
+_GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
 
 def _client() -> OpenAI:
-    return OpenAI(api_key=settings.hf_token, base_url=_HF_BASE_URL)
+    return OpenAI(api_key=settings.groq_api_key, base_url=_GROQ_BASE_URL)
 
 
 def _parse_json(text: str) -> dict:
@@ -40,7 +40,7 @@ JSON schema (use exactly these keys):
 
     try:
         resp = _client().chat.completions.create(
-            model=_HF_MODEL,
+            model=_GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=600,
         )
@@ -71,7 +71,7 @@ Return ONLY valid JSON:
 
     try:
         resp = _client().chat.completions.create(
-            model=_HF_MODEL,
+            model=_GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=600,
         )
@@ -101,7 +101,7 @@ Instructions:
 
     try:
         resp = _client().chat.completions.create(
-            model=_HF_MODEL,
+            model=_GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=500,
         )
@@ -141,7 +141,7 @@ Rules:
 
     try:
         resp = _client().chat.completions.create(
-            model=_HF_MODEL,
+            model=_GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=800,
         )
@@ -159,7 +159,7 @@ Return ONLY valid JSON: {{"suggestions": ["title1", "title2", "title3", "title4"
 
     try:
         resp = _client().chat.completions.create(
-            model=_HF_MODEL,
+            model=_GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=120,
         )
